@@ -17,26 +17,21 @@ import pytest
 from neo4j import Record
 import weaviate
 from neo4j_genai.retrievers.external.weaviate import WeaviateNeo4jRetriever
-from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from .utils import get_query_vector
 from .populate_dbs import populate_dbs
 import os
 
 
 @pytest.fixture(scope="module")
-def weaviate_client():
-    w_client = weaviate.connect_to_local()
-    yield w_client
-    w_client.close()
+def sentence_transformer_embedder():
+    embedder = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    yield embedder
 
 
 @pytest.fixture(scope="module")
-def weaviate_client_openai():
-    w_client = weaviate.connect_to_local(
-        headers={
-            "X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY_E2E_TESTS"),
-        }
-    )
+def weaviate_client():
+    w_client = weaviate.connect_to_local()
     yield w_client
     w_client.close()
 
@@ -69,18 +64,16 @@ def test_weaviate_neo4j_vector_input(driver, weaviate_client):
 
 
 @pytest.mark.usefixtures("populate_weaviate_neo4j")
-def test_weaviate_neo4j_text_input_local_embedder(driver, weaviate_client):
-    embedder = OpenAIEmbeddings(
-        openai_api_key=os.getenv("OPENAI_API_KEY_E2E_TESTS"),
-        model="text-embedding-ada-002",
-    )
+def test_weaviate_neo4j_text_input_local_embedder(
+    driver, weaviate_client, sentence_transformer_embedder
+):
     retriever = WeaviateNeo4jRetriever(
         driver=driver,
         client=weaviate_client,
         collection="Jeopardy",
         id_property_external="neo4j_id",
         id_property_neo4j="id",
-        embedder=embedder,
+        embedder=sentence_transformer_embedder,
     )
 
     top_k = 2
@@ -94,10 +87,10 @@ def test_weaviate_neo4j_text_input_local_embedder(driver, weaviate_client):
 
 
 @pytest.mark.usefixtures("populate_weaviate_neo4j")
-def test_weaviate_neo4j_text_input_remote_embedder(driver, weaviate_client_openai):
+def test_weaviate_neo4j_text_input_remote_embedder(driver, weaviate_client):
     retriever = WeaviateNeo4jRetriever(
         driver=driver,
-        client=weaviate_client_openai,
+        client=weaviate_client,
         collection="Jeopardy",
         id_property_external="neo4j_id",
         id_property_neo4j="id",

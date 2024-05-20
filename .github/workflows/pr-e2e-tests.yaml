@@ -22,16 +22,22 @@ jobs:
       weaviate:
         image: cr.weaviate.io/semitechnologies/weaviate:1.25.1
         env:
-          ENABLE_MODULES: text2vec-openai
-          DEFAULT_VECTORIZER_MODULE: text2vec-openai
+          TRANSFORMERS_INFERENCE_API: "http://t2v-transformers:8080"
+          AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+          DEFAULT_VECTORIZER_MODULE: "text2vec-transformers"
+          ENABLE_MODULES: "text2vec-transformers"
         ports:
           - 8080:8080
           - 50051:50051
+      t2v-transformers:
+        image: cr.weaviate.io/semitechnologies/transformers-inference:sentence-transformers-all-MiniLM-L6-v2-onnx
+        env:
+          ENABLE_CUDA: "0"
       neo4j:
         image: neo4j:${{ matrix.neo4j-version }}-${{ matrix.neo4j-edition }}
         env:
           NEO4J_AUTH: neo4j/password
-          NEO4J_ACCEPT_LICENSE_AGREEMENT: yes
+          NEO4J_ACCEPT_LICENSE_AGREEMENT: "eval"
         ports:
           - 7687:7687
           - 7474:7474
@@ -59,6 +65,4 @@ jobs:
       - name: Install dependencies
         run: poetry install --with dev
       - name: Run tests
-        env:
-          OPENAI_API_KEY_E2E_TESTS: ${{ secrets.OPENAI_API_KEY_E2E_TESTS }}
         run: poetry run pytest ./tests/e2e

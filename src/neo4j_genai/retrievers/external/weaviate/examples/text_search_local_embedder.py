@@ -15,9 +15,9 @@
 
 import os
 from neo4j_genai.retrievers.external.weaviate import WeaviateNeo4jRetriever
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from neo4j import GraphDatabase
 import weaviate
-from langchain_openai import OpenAIEmbeddings
 
 NEO4J_URL = "neo4j://localhost:7687"
 NEO4J_AUTH = ("neo4j", "password")
@@ -25,23 +25,20 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 def main():
-    neo4j_driver = GraphDatabase.driver(NEO4J_URL, auth=NEO4J_AUTH)
-    with weaviate.connect_to_local() as w_client:
-        embedder = OpenAIEmbeddings(
-            api_key=OPENAI_API_KEY, model="text-embedding-ada-002"
-        )
-        retriever = WeaviateNeo4jRetriever(
-            driver=neo4j_driver,
-            client=w_client,
-            collection="Jeopardy",
-            id_property_external="neo4j_id",
-            id_property_neo4j="id",
-            embedder=embedder,
-        )
+    with GraphDatabase.driver(NEO4J_URL, auth=NEO4J_AUTH) as neo4j_driver:
+        with weaviate.connect_to_local() as w_client:
+            embedder = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+            retriever = WeaviateNeo4jRetriever(
+                driver=neo4j_driver,
+                client=w_client,
+                collection="Jeopardy",
+                id_property_external="neo4j_id",
+                id_property_neo4j="id",
+                embedder=embedder,
+            )
 
-        res = retriever.search(query_text="biology", top_k=2)
-        print(res)
-    neo4j_driver.close()
+            res = retriever.search(query_text="biology", top_k=2)
+            print(res)
 
 
 if __name__ == "__main__":

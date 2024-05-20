@@ -2,45 +2,21 @@
 
 This is a manual task you need to do in the terminal.
 
-```bash
-docker run \
-   --name testweaviate \
-   --rm \
-   -p8080:8080 -p 50051:50051 \
-   cr.weaviate.io/semitechnologies/weaviate:1.25.1
-
-docker run \
-   --name testneo4j \
-   --rm \
-   -p7474:7474 -p7687:7687 \
-   --env NEO4J_ACCEPT_LICENSE_AGREEMENT=eval \
-   --env NEO4J_AUTH=neo4j/password \
-   neo4j:enterprise
-```
-
-To run Weaviate with OpenAI Vectorizer enabled
+This spins up Neo4j and Weaviate containers and is configuring Weaviate to use embeddings from Hugging Face's Sentence Transformers using the "all-MiniLM-L6-v2" model, which has 384 dimensions.
 
 ```bash
-docker run \
-   --name testweaviate \
-   --rm \
-   -p8080:8080 -p 50051:50051 \
-   --env ENABLE_MODULES=text2vec-openai \
-   --env DEFAULT_VECTORIZER_MODULE=text2vec-openai \
-   cr.weaviate.io/semitechnologies/weaviate:1.25.1
+docker compose -f src/neo4j_genai/retrievers/external/weaviate/examples/docker-compose.yml up
 ```
 
 ### Write data (once)
 
-Run this from the project root to write data to both dbs
+Run this from the project root to write data to both dbs.
 
 ```
 poetry run python tests/e2e/weaviate_e2e/populate_dbs.py
 ```
 
 ### Search
-
-To run the text search examples you'd need to create a `.env` file and add a variable named `OPENAI_API_KEY=<your-api-key>` inside.
 
 ```
 # search by vector

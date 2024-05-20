@@ -27,9 +27,7 @@ def populate_dbs(neo4j_driver, w_client, collection_name="Jeopardy"):
     neo4j_objects, w_question_objs = build_data_objects()
     w_client.collections.create(
         collection_name,
-        vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_openai(
-            model="ada", model_version="002"
-        ),
+        vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_transformers(),
         vector_index_config=wvc.config.Configure.VectorIndex.hnsw(
             distance_metric=wvc.config.VectorDistances.COSINE  # select prefered distance metric
         ),
@@ -89,7 +87,7 @@ def build_data_objects():
     # MIT License
     file_name = os.path.join(
         BASE_DIR,
-        "./data/jeopardy_tiny_with_vectors_all-OpenAI-ada-002.json",
+        "./data/jeopardy_tiny_with_vectors_all-MiniLM-L6-v2.json",
     )
     with open(file_name, "r") as f:
         data = json.load(f)
